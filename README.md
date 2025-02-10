@@ -1,4 +1,4 @@
-# MovieCloud
+# MovieApp
 
 **MovieCloud** is a web application featuring a sleek, user-friendly video player that lets users stream and enjoy their favorite movies effortlessly. The app also allows users to upload their movies directly to the cloud for easy access anytime, anywhere.
 
