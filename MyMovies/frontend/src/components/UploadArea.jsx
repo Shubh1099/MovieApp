@@ -2,7 +2,7 @@ import { FaCloudUploadAlt } from "react-icons/fa";
 function UploadArea() {
   return (
     <>
-      <div className="bg-neutral-200 p-6    border-dashed border-2 grid justify-center  ">
+      <div className="bg-neutral-100 p-6 border-dashed border-2 grid justify-center shadow-2xl ">
         <h1 className="text-4xl font-light">Upload Your Movie</h1>
         <div className="p-1 flex-row justify-self-center ">
           <FaCloudUploadAlt size={180} />
