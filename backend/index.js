@@ -21,16 +21,15 @@ app.use(cors());
 app.use(express.json());
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "ap-south-1",
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "AKIAUIHR7EQQUKH3HCUA",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey:
-      process.env.AWS_SECRET_ACCESS_KEY ||
-      "CyVQ9WzCblD8n9t2jIuqREu3bITjrJshKCSANVFy",
+    process.env.AWS_SECRET_ACCESS_KEY
   },
 });
 
-const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "movieebucket";
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 
 console.log("Environment variables:");
 console.log("AWS_REGION:", process.env.AWS_REGION);
