@@ -1,1 +1,24 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .upload-area {
+    @apply border-2 border-dashed border-primary p-8 rounded-lg text-center cursor-pointer transition-all duration-300;
+  }
+
+  .upload-area:hover,
+  .upload-area.dragging {
+    @apply border-primary-hover bg-primary/10;
+  }
+}

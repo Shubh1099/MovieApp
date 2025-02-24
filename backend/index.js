@@ -1,82 +1,88 @@
-import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import { dirname } from "path";
 import {
-  GetObjectCommand,
   S3Client,
   PutObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-dotenv.config();
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
 
-const ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.use(cors());
+app.use(express.json());
 
 const s3Client = new S3Client({
-  region: "ap-south-1",
+  region: process.env.AWS_REGION || "ap-south-1",
   credentials: {
-    accessKeyId: ACCESS_KEY_ID,
-    secretAccessKey: SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "AKIAUIHR7EQQUKH3HCUA",
+    secretAccessKey:
+      process.env.AWS_SECRET_ACCESS_KEY ||
+      "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",
   },
 });
 
-async function listObjects() {
-  const command = new ListObjectsV2Command({
-    Bucket: "movieebucket",
-    key: "/",
-  });
-  const result = await s3Client.send(command);
-  // console.log("Objects in the bucket:");
-  // result.Contents?.forEach((object) => {
-  //   console.log(` - ${object.Key} (${object.Size} bytes)`);
-  // });
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "movieebucket";
 
-  console.log(JSON.stringify(result))
-}
+console.log("Environment variables:");
+console.log("AWS_REGION:", process.env.AWS_REGION);
+console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
+console.log("BUCKET_NAME variable:", BUCKET_NAME);
 
-async function putObjectURL(filename, contentType) {
-  const command = new PutObjectCommand({
-    Bucket: "movieebucket",
-    Key: `uploads/user-upload/${filename}`,
-    ContentType: contentType,
-  });
+// Upload video endpoint
+app.post("/api/upload", upload.single("video"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-  const url = await getSignedUrl(s3Client, command, {
-    expiresIn: 300,
-  });
+    const params = {
+      Bucket: BUCKET_NAME,
+      Key: `videos/${Date.now()}-${req.file.originalname}`,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    };
 
-  return url;
-}
+    await s3Client.send(new PutObjectCommand(params));
+    res.json({ message: "Upload successful" });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 
-async function getObjectURL(key) {
-  const command = new GetObjectCommand({
-    Bucket: "movieebucket",
-    Key: key,
-  });
-  const url = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-  return url;
-}
+// Get videos list endpoint
+app.get("/api/videos", async (req, res) => {
+  try {
+    const params = {
+      Bucket: BUCKET_NAME,
+      Prefix: "videos/",
+    };
 
-async function init() {
-  // try {
-  //   const url = await getObjectURL("video.mp4");
-  //   console.log("URL for the video is:", url);
-  // } catch (error) {
-  //   console.error("Error getting signed URL:", error)
-  // }
+    const data = await s3Client.send(new ListObjectsV2Command(params));
+    const videos =
+      data.Contents?.map((item) => ({
+        key: item.Key,
+        url: `https://${BUCKET_NAME}.s3.ap-south-1.amazonaws.com/${item.Key}`,
+        lastModified: item.LastModified,
+      })) || [];
 
-  // try {
-  //   // const url = await putObjectURL("video.mp4");
-  //   const today = new Date().toISOString().slice(0, 10);
+    res.json(videos);
+  } catch (error) {
+    console.error("List error:", error);
+    res.status(500).json({ error: "Failed to list videos" });
+  }
+});
 
-  //   console.log(
-  //     "URL for uploading is:",
-  //     await putObjectURL(`video-${today}.mp4`, "video/mp4")
-  //   );
-  // } catch (error) {
-  //   console.error("Error getting signed URL:", error);
-  // }
-
-  await listObjects();
-}
-
-init();
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
